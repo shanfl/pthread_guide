@@ -19,7 +19,7 @@ The advantage of using a thread group over using a process group is that context
 On the other hand, because threads in a group all use the same memory space, if one of them corrupts the contents of its memory, other threads might suffer as well. With processes, the operating system normally protects processes from one another, and thus if one corrupts its own memory space, other processes won't suffer. Another advantage of using processes is that they can run on different machines, while all the threads have to run on the same machine (at least normally).
 
 ####Creating And Destroying Threads
-n a multi-threaded program starts executing, it has one thread running, which executes the main() function of the program. This is already a full-fledged thread, with its own thread ID. In order to create a new thread, the program should use the pthread_create() function. Here is how to use it:
+When a multi-threaded program starts executing, it has one thread running, which executes the main() function of the program. This is already a full-fledged thread, with its own thread ID. In order to create a new thread, the program should use the **pthread_create()** function. Here is how to use it:
 
 ```[cpp]
 #include <stdio.h>       /* standard I/O routines                 */
@@ -65,22 +65,22 @@ int main(int argc, char* argv[])
 A few notes should be mentioned about this program:
 
 - Note that the main program is also a thread, so it executes the do_loop() function in parallel to the thread it creates.
-- pthread_create() gets 4 parameters. The first parameter is used by pthread_create() to supply the program with information about the thread. The second parameter is used to set some attributes for the new thread. In our case we supplied a NULL pointer to tell pthread_create() to use the default values. The third parameter is the name of the function that the thread will start executing. The forth parameter is an argument to pass to this function. Note the cast to a 'void*'. It is not required by ANSI-C syntax, but is placed here for clarification.
+- **pthread_create**() gets 4 parameters. The first parameter is used by pthread_create() to supply the program with information about the thread. The second parameter is used to set some attributes for the new thread. In our case we supplied a NULL pointer to tell **pthread_create()** to use the default values. The third parameter is the name of the function that the thread will start executing. The forth parameter is an argument to pass to this function. Note the cast to a '**void***'. It is not required by ANSI-C syntax, but is placed here for clarification.
 - The delay loop inside the function is used only to demonstrate that the threads are executing in parallel. Use a larger delay value if your CPU runs too fast, and you see all the printouts of one thread before the other.
-- The call to pthread_exit() Causes the current thread to exit and free any thread-specific resources it is taking. There is no need to use this call at the end of the thread's top function, since when it returns, the thread would exit automatically anyway. This function is useful if we want to exit a thread in the middle of its execution.
+- The call to **pthread_exit()** Causes the current thread to exit and free any thread-specific resources it is taking. There is no need to use this call at the end of the thread's top function, since when it returns, the thread would exit automatically anyway. This function is useful if we want to exit a thread in the middle of its execution.
 
 In order to compile a multi-threaded program using gcc, we need to link it with the pthreads library. Assuming you have this library already installed on your system, here is how to compile our first program: 
 
 `gcc pthread_create.c -o pthread_create -lpthread `
 
-The source code for this program may be found in the [pthread_create.c](http://) file.
+The source code for this program may be found in the [pthread_create.c](file://) file.
 
 ####Synchronizing Threads With Mutexes
 One of the basic problems when running several threads that use the same memory space, is making sure they don't "step on each other's toes". By this we refer to the problem of using a data structure from two different threads.
 
 For instance, consider the case where two threads try to update two variables. One tries to set both to 0, and the other tries to set both to 1. If both threads would try to do that at the same time, we might get with a situation where one variable contains 1, and one contains 0. This is because a context-switch (we already know what this is by now, right?) might occur after the first tread zeroed out the first variable, then the second thread would set both variables to 1, and when the first thread resumes operation, it will zero out the second variable, thus getting the first variable set to '1', and the second set to '0'.
 
-######What Is A Mutex?
+#####What Is A Mutex?
 A basic mechanism supplied by the pthreads library to solve this problem, is called a mutex. A mutex is a lock that guarantees three things:
 
 - Atomicity - Locking a mutex is an atomic operation, meaning that the operating system (or threads library) assures you that if you locked a mutex, no other thread succeeded in locking this mutex at the same time.
@@ -104,7 +104,7 @@ unlock mutex 'X1'.
 ```
 Assuming both threads use the same mutex, we are assured that after they both ran through this code, either both variables are set to '0', or both are set to '1'. You'd note this requires some work from the programmer - If a third thread was to access these variables via some code that does not use this mutex, it still might mess up the variable's contents. Thus, it is important to enclose all the code that accesses these variables in a small set of functions, and always use only these functions to access these variables.
 
-######Creating And Initializing A Mutex
+#####Creating And Initializing A Mutex
 In order to create a mutex, we first need to declare a variable of type pthread_mutex_t , and then initialize it. The simplest way it by assigning it the **PTHREAD_MUTEX_INITIALIZER** constant. So we'll use a code that looks something like this: 
 
 
@@ -115,7 +115,7 @@ One note should be made here: This type of initialization creates a mutex called
 
 There is another type of mutex, called 'recursive mutex', which allows the thread that locked it, to lock it several more times, without getting blocked (but other threads that try to lock the mutex now will get blocked). If the thread then unlocks the mutex, it'll still be locked, until it is unlocked the same amount of times as it was locked. This is similar to the way modern door locks work - if you turned it twice clockwise to lock it, you need to turn it twice counter-clockwise to unlock it. This kind of mutex can be created by assigning the constant **PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP** to a mutex variable.
 
-######Locking And Unlocking A Mutex
+#####Locking And Unlocking A Mutex
 In order to lock a mutex, we may use the function pthread_mutex_lock(). This function attempts to lock the mutex, or block the thread if the mutex is already locked by another thread. In this case, when the mutex is unlocked by the first process, the function will return with the mutex locked by our process. Here is how to lock a mutex (assuming it was initialized earlier): 
 
 ```
@@ -138,7 +138,7 @@ if (rc) {
 }
 ```
 
-######Destroying A Mutex
+#####Destroying A Mutex
 After we finished using a mutex, we should destroy it. Finished using means no thread needs it at all. If only one thread finished with the mutex, it should leave it alive, for the other threads that might still need to use it. Once all finished using it, the last one can destroy it using the **pthread_mutex_destroy()** function: 
 
 
@@ -147,13 +147,13 @@ After we finished using a mutex, we should destroy it. Finished using means no t
 
 After this call, this variable (a_mutex) may not be used as a mutex any more, unless it is initialized again. Thus, if one destroys a mutex too early, and another thread tries to lock or unlock it, that thread will get a **EINVAL** error code from the lock or unlock function.
 
-######Using A Mutex - A Complete Example
+#####Using A Mutex - A Complete Example
 After we have seen the full life cycle of a mutex, lets see an example program that uses a mutex. The program introduces two employees competing for the "employee of the day" title, and the glory that comes with it. To simulate that in a rapid pace, the program employs 3 threads: one that promotes Danny to "employee of the day", one that promotes Moshe to that situation, and a third thread that makes sure that the employee of the day's contents is consistent (i.e. contains exactly the data of one employee).
 Two copies of the program are supplied. One that uses a mutex, and one that does not. Try them both, to see the differences, and be convinced that mutexes are essential in a multi-threaded environment.
 
 The programs themselves are in the files accompanying this tutorial. The one that uses a mutex is e[mployee-with-mutex.c](http://). The one that does not use a mutex is [employee-without-mutex.c](http://). Read the comments inside the source files to get a better understanding of how they work.
 
-######Starvation And Deadlock Situations
+#####Starvation And Deadlock Situations
 Again we should remember that ***pthread_mutex_lock()*** might block for a non-determined duration, in case of the mutex being already locked. If it remains locked forever, it is said that our poor thread is "starved" - it was trying to acquire a resource, but never got it. It is up to the programmer to ensure that such starvation won't occur. The pthread library does not help us with that.
 
 The pthread library might, however, figure out a "deadlock". A deadlock is a situation in which a set of threads are all waiting for resources taken by other threads, all in the same set. Naturally, if all threads are blocked waiting for a mutex, none of them will ever come back to life again. The pthread library keeps track of such situations, and thus would fail the last thread trying to call **pthread_mutex_lock()**, with an error of type EDEADLK. The programmer should check for such a value, and take steps to solve the deadlock somehow.
@@ -166,12 +166,12 @@ As we've seen before with mutexes, they allow for simple coordination - exclusiv
 
 All these examples require the ability to send notifications between threads. This is where condition variables are brought into the picture.
 
-######What Is A Condition Variable?
+#####What Is A Condition Variable?
 A condition variable is a mechanism that allows threads to wait (without wasting CPU cycles) for some even to occur. Several threads may wait on a condition variable, until some other thread signals this condition variable (thus sending a notification). At this time, one of the threads waiting on this condition variable wakes up, and can act on the event. It is possible to also wake up all threads waiting on this condition variable by using a broadcast method on this variable.
 
 Note that a condition variable does not provide locking. Thus, a mutex is used along with the condition variable, to provide the necessary locking when accessing this condition variable.
 
-######Creating And Initializing A Condition Variable
+#####Creating And Initializing A Condition Variable
 
 Creation of a condition variable requires defining a variable of type **pthread_cond_t**, and initializing it properly. Initialization may be done with either a simple use of a macro named **PTHREAD_COND_INITIALIZER** or the usage of the **pthread_cond_init()** function. We will show the first form here: 
 
@@ -181,7 +181,7 @@ This defines a condition variable named 'got_request', and initializes it.
 
 Note: since the **PTHREAD_COND_INITIALIZER** is actually a structure, it may be used to initialize a condition variable only when it is declared. In order to initialize it during runtime, one must use the **pthread_cond_init()** function.
 
-######Signaling A Condition Variable
+#####Signaling A Condition Variable
 
 In order to signal a condition variable, one should either the **pthread_cond_signal()** function (to wake up a only one thread waiting on this variable), or the **pthread_cond_broadcast()** function (to wake up all threads waiting on this variable). Here is an example using signal, assuming 'got_request' is a properly initialized condition variable: 
 
@@ -197,7 +197,7 @@ When either function returns, 'rc' is set to 0 on success, and to a non-zero val
 
 It is also not remembered for future use - if after the signaling function returns another thread starts waiting on this condition variable, a further signal is required to wake it up.
 
-######Waiting On A Condition Variable
+#####Waiting On A Condition Variable
 
 If one thread signals the condition variable, other threads would probably want to wait for this signal. They may do so using one of two functions, **pthread_cond_wait()** or **pthread_cond_timedwait()**. Each of these functions takes a condition variable, and a mutex (which should be locked before calling the wait function), unlocks the mutex, and waits until the condition variable is signaled, suspending the thread's execution. If this signaling causes the thread to awake (see discussion of **pthread_cond_signal()** earlier), the mutex is automagically locked again by the wait funciton, and the wait function returns.
 
@@ -278,7 +278,7 @@ As you can see, the timed wait version is way more complex, and thus better be w
 
 **Note 2:** when the mutex is being broadcast (using **pthread_cond_broadcast**), this does not mean all threads are running together. Each of them tries to lock the mutex again before returning from their wait function, and thus they'll start running one by one, each one locking the mutex, doing their work, and freeing the mutex before the next thread gets its chance to run.
 
-######Destroying A Condition Variable
+#####Destroying A Condition Variable
 
 After we are done using a condition variable, we should destroy it, to free any system resources it might be using. This can be done using the **pthread_cond_destroy()**. In order for this to work, there should be no threads waiting on this condition variable. Here is how to use this function, again, assuming 'got_request' is a pre-initialized condition variable: 
 
@@ -291,7 +291,7 @@ if (rc == EBUSY) { /* some thread is still waiting on this condition variable */
 
 What if some thread is still waiting on this variable? depending on the case, it might imply some flaw in the usage of this variable, or just lack of proper thread cleanup code. It is probably good to alert the programmer, at least during debug phase of the program, of such a case. It might mean nothing, but it might be significant.
 
-######A Real Condition For A Condition Variable
+#####A Real Condition For A Condition Variable
 
 A note should be taken about condition variables - they are usually pointless without some real condition checking combined with them. To make this clear, lets consider the server example we introduced earlier. Assume that we use the 'got_request' condition variable to signal that a new request has arrived that needs handling, and is held in some requests queue. If we had threads waiting on the condition variable when this variable is signaled, we are assured that one of these threads will awake and handle this request.
 
@@ -328,7 +328,7 @@ if (num_requests > 0 && rc == 0) { /* we have a request pending */
 pthread_mutex_unlock(&a_mutex);
 ```
 
-######Using A Condition Variable - A Complete Example
+#####Using A Condition Variable - A Complete Example
 
 As an example for the actual usage of condition variables, we will show a program that simulates the server we have described earlier - one thread, the receiver, gets client requests. It inserts the requests to a linked list, and a hoard of threads, the handlers, are handling these requests. For simplicity, in our simulation, the receiver thread creates requests and does not read them from real clients.
 
@@ -353,11 +353,11 @@ In multi-threaded programs, we also might find a need for such variables. We sho
 
 In order to have such a pointer, we need a mechanism that enables the same global variable to have a different location in memory. This is what the thread-specific data mechanism is used for.
 
-######Overview Of Thread-Specific Data Support
+#####Overview Of Thread-Specific Data Support
 
 In the **thread-specific data (TSD)** mechanism, we have notions of keys and values. Each key has a name, and pointer to some memory area. Keys with the same name in two separate threads always point to different memory locations - this is handled by the library functions that allocate memory blocks to be accessed via these keys. We have a function to create a key (invoked once per key name for the whole process), a function to allocate memory (invoked separately in each thread), and functions to de-allocate this memory for a specific thread, and a function to destroy the key, again, process-wide. we also have functions to access the data pointed to by a key, either setting its value, or returning the value it points to.
 
-######Allocating Thread-Specific Data Block
+#####Allocating Thread-Specific Data Block
 
 The pthread_key_create() function is used to allocate a new key. This key now becomes valid for all threads in our process. When a key is created, the value it points to defaults to NULL. Later on each thread may change its copy of the value as it wishes. Here is how to use this function: 
 
@@ -381,7 +381,7 @@ If we created several keys, their associated destructor functions will be called
 - If the **pthread_key_create()** function succeeds, it returns 0. Otherwise, it returns some error code.
 There is a limit of **PTHREAD_KEYS_MAX** keys that may exist in our process at any given time. An attempt to create a key after P**THREAD_KEYS_MAX** exits, will cause a return value of EAGAIN from the **pthread_key_create()** function.
 
-######Accessing Thread-Specific Data
+#####Accessing Thread-Specific Data
 
 After we have created a key, we may access its value using two pthread functions: **pthread_getspecific**() and **pthread_setspecific**(). The first is used to get the value of a given key, and the second is used to set the data of a given key. A key's value is simply a void pointer (void*), so we can store in it anything that we want. Lets see how to use these functions. We assume that 'a_key' is a properly initialized variable of type **pthread_key_t** that contains a previously created key:
 ```
@@ -424,7 +424,7 @@ Note also that there are two cases where **pthread_getspecific**() might return 
 - The key supplied as a parameter is invalid (e.g. its key wasn't created).
 - The value of this key is NULL. This means it either wasn't initialized, or was set to NULL explicitly by a previous call to **pthread_setspecific**().
 
-######Deleting Thread-Specific Data Block
+#####Deleting Thread-Specific Data Block
 
 The **pthread_key_delete**() function may be used to delete keys. But do not be confused by this function's name: it does not delete memory associated with this key, nor does it call the destructor function defined during the key's creation. Thus, you still need to do memory cleanup on your own if you need to free this memory during runtime. However, since usage of global variables (and thus also thread-specific data), you usually don't need to free this memory until the thread terminate, in which case the pthread library will invoke your destructor functions anyway.
 
@@ -434,7 +434,7 @@ Using this function is simple. Assuming list_key is a **pthread_key_t** variable
 
 the function will return 0 on success, or EINVAL if the supplied variable does not point to a valid TSD key.
 
-######Example
+#####Example
 
 - [thrd_specific.c](http://)
 - [pthread_key_create](http://)
@@ -445,7 +445,7 @@ the function will return 0 on success, or EINVAL if the supplied variable does n
 ####Thread Cancellation And Termination
 As we create threads, we need to think about terminating them as well. There are several issues involved here. We need to be able to terminate threads cleanly. Unlike processes, where a very ugly method of using signals is used, the folks that designed the pthreads library were a little more thoughtful. So they supplied us with a whole system of canceling a thread, cleaning up after a thread, and so on. We will discuss these methods here.
 
-######Canceling A Thread
+#####Canceling A Thread
 
 When we want to terminate a thread, we can use the pthread_cancel function. This function gets a thread ID as a parameter, and sends a cancellation request to this thread. What this thread does with this request depends on its state. It might act on it immediately, it might act on it when it gets to a cancellation point (discussed below), or it might completely ignore it. We'll see later how to set the state of a thread and define how it acts on cancellation requests. Lets first see how to use the cancel function. We assume that 'thr_id' is a variable of type pthread_id containing the ID of a running thread: 
 
@@ -455,7 +455,7 @@ When we want to terminate a thread, we can use the pthread_cancel function. This
 
 The **pthread_cancel**() function returns 0, so we cannot know if it succeeded or not.
 
-######Setting Thread Cancellation State
+#####Setting Thread Cancellation State
 
 A thread's cancel state may be modified using several methods. The first is by using the pthread_setcancelstate() function. This function defines whether the thread will accept cancellation requests or not. The function takes two arguments. One that sets the new cancel state, and one into which the previous cancel state is stored by the function. Here is how it is used: 
 
@@ -491,7 +491,7 @@ Note that you may supply a NULL pointer as the second parameter, and then you wo
 
 You might wonder - "What if i never set the cancellation state or type of a thread?". Well, in such a case, the pthread_create() function automatically sets the thread to enabled deferred cancellation, that is, PTHREAD_CANCEL_ENABLE for the cancel mode, and PTHREAD_CANCEL_DEFERRED for the cancel type.
 
-######Cancellation Points
+#####Cancellation Points
 
 As we've seen, a thread might be in a state where it does not handle cancel requests immediately, but rather defers them until it reaches a cancellation point. So what are these cancellation points?
 
@@ -507,7 +507,7 @@ In general, any function that might suspend the execution of a thread for a long
 This means that if a thread executes any of these functions, it'll check for deferred cancel requests. If there is one, it will execute the cancellation sequence, and terminate. Out of these functions, pthread_testcancel() is unique - it's only purpose is to test whether a cancellation request is pending for this thread. If there is, it executes the cancellation sequence. If not, it returns immediately. This function may be used in a thread that does a lot of processing without getting into a "natural" cancellation state.
 
 
-######Setting Thread Cleanup Functions
+#####Setting Thread Cleanup Functions
 
 One of the features the pthreads library supplies is the ability for a thread to clean up after itself, before it exits. This is done by specifying one or more functions that will be called automatically by the pthreads library when the thread exits, either due to its own will (e.g. calling **pthread_exit**()), or due to it being canceled.
 
@@ -570,7 +570,7 @@ As we can see, we allocated some memory here, and registered a cleanup handler t
 As to the reason that we used that complex piece of code to unregister the cleanup handler, this is done to assure that our thread won't get canceled in the middle of the execution of our cleanup handler. This could have happened if our thread was in asynchronous cancellation mode. Thus, we made sure it was in deferred cancellation mode, then unregistered the cleanup handler, and finally restored whatever cancellation mode our thread was in previously. Note that we still assume the thread cannot be canceled in the execution of pthread_cleanup_pop() itself - this is true, since pthread_cleanup_pop() is not a cancellation point.
 
 
-######Synchronizing On Threads Exiting
+#####Synchronizing On Threads Exiting
 
 Sometimes it is desired for a thread to wait for the end of execution of another thread. This can be done using the pthread_join() function. It receives two parameters: a variable of type pthread_t, denoting the thread to be joined, and an address of a void* variable, into which the exit code of the thread will be placed (or PTHREAD_CANCELED if the joined thread was canceled).
 The pthread_join() function suspends the execution of the calling thread until the joined thread is terminated.
@@ -590,7 +590,7 @@ The last change is done using a **pthread_join**() loop: call **pthread_join**()
 
 The modified program is available in the file named [thread-pool-server-with-join.c](http://). Look for the word 'CHANGE' (in capital letters) to see the locations of the three changes.
 
-######Detaching A Thread
+#####Detaching A Thread
 
 We have seen how threads can be joined using the pthread_join() function. In fact, threads that are in a 'join-able' state, must be joined by other threads, or else their memory resources will not be fully cleaned out. This is similar to what happens with processes whose parents didn't clean up after them (also called 'orphan' or 'zombie' processes).
 
@@ -615,7 +615,7 @@ if (rc == 0) {
 Of-course, if we wish to have a thread in the detached state immediately, using the first option (setting the detached state directly when calling pthread_create() is more efficient.
 
 
-######Threads Cancellation - A Complete Example
+#####Threads Cancellation - A Complete Example
 
 Our next example is much larger then the previous examples. It demonstrates how one could write a multi-threaded program in C, in a more or less clean manner. We take our previous thread-pool server, and enhance it in two ways. First, we add the ability to tune the number of handler threads based on the requests load. New threads are created if the requests queue becomes too large, and after the queue becomes shorter again, extra threads are canceled.
 
@@ -645,7 +645,7 @@ In graphical programs the problem is more severe, since the application should a
 
 In order to structure things better, we may use a third thread, to control and synchronize the user-input and task-performing threads. If the user-input thread gets any user input, it will ask the controlling thread to handle the operation. If the task-performing thread finishes its operation, it will ask the controlling thread to show the results to the user.
 
-######User Interaction - A Complete Example
+#####User Interaction - A Complete Example
 
 As an example, we will write a simple character-mode program that counts the number of lines in a file, while allowing the user to cancel the operation in the middle.
 
