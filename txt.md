@@ -666,5 +666,44 @@ Side-Notes**
 *water-marks algorithm*
 > An algorithm used mostly when handling buffers or queues: start filling in the queue. If its size exceeds a threshold, known as the high water-mark, stop filling the queue (or start emptying it faster). Keep this state until the size of the queue becomes lower then another threshold, known as the low water-mark. At this point, resume the operation of filling the queue (or return the emptying speed to the original speed).
 
+###### Note For pthread_cond_t (from [Stack Overflow - Calling pthread_cond_signal without locking mutex](http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex))
 
-[toc]
+> If you do not lock the mutex in the codepath that changes the condition and signals, you can lose wakeups. Consider this pair of processes:
+
+> Process A:
+```
+pthread_mutex_lock(&mutex);
+while (condition == FALSE)
+    pthread_cond_wait(&cond, &mutex);
+pthread_mutex_unlock(&mutex);
+```
+
+>Process B (incorrect):
+
+> ```
+condition = TRUE;
+pthread_cond_signal(&cond);
+Then consider this possible interleaving of instructions, where condition starts out as FALSE:
+```
+
+> `Process A   +++++++++++++++++++++++++++++++++   Process B`
+> ```
+pthread_mutex_lock(&mutex);
+while (condition == FALSE)
+													condition = TRUE;
+        											pthread_cond_signal(&cond);
+pthread_cond_wait(&cond, &mutex);
+> ```
+The condition is now **TRUE**, but Process A is stuck waiting on the condition variable - it missed the wakeup signal. If we alter Process B to lock the mutex:
+
+> Process B (correct):
+```
+pthread_mutex_lock(&mutex);
+condition = TRUE;
+pthread_cond_signal(&cond);
+pthread_mutex_unlock(&mutex);
+```
+...then the above cannot occur; the wakeup will never be missed.
+
+> (Note that you can actually move the pthread_cond_signal() itself after the pthread_mutex_unlock(), but this can result in less optimal scheduling of threads, and you've necessarily locked the mutex already in this code path due to changing the condition itself).
+
