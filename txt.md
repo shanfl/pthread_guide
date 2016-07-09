@@ -336,14 +336,10 @@ As an example for the actual usage of condition variables, we will show a progra
 The program source is available in the file [thread-pool-server.c](http://), and contains many comments. Please read the source file first, and then read the following clarifying notes.
 
 - The 'main' function first launches the handler threads, and then performs the chore of the receiver thread, via its main loop.
-- 
 - A single mutex is used both to protect the condition variable, and to protect the linked list of waiting requests. This simplifies the design. As an exercise, you may think how to divide these roles into two mutexes.
-- 
 - The mutex itself ***MUST*** be a recursive mutex. In order to see why, look at the code of the 'handle_requests_loop' function. You will notice that it first locks the mutex, and afterwards calls the 'get_request' function, which locks the mutex again. If we used a non-recursive mutex, we'd get locked indefinitely in the mutex locking operation of the 'get_request' function.
 You may argue that we could remove the mutex locking in the 'get_request' function, and thus remove the double-locking problem, but this is a flawed design - in a larger program, we might call the 'get_request' function from other places in the code, and we'll need to check for proper locking of the mutex in each of them.
-
 - As a rule, when using recursive mutexes, we should try to make sure that each lock operation is accompanied by a matching unlock operation in the same function. Otherwise, it will be very hard to make sure that after locking the mutex several times, it is being unlocked the same number of times, and deadlocks would occur.
-
 - The implicit unlocking and re-locking of the mutex on the call to the pthread_cond_wait() function is confusing at first. It is best to add a comment regarding this behavior in the code, or else someone that reads this code might accidentally add a further mutex lock.
 
 
