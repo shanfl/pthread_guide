@@ -433,9 +433,9 @@ the function will return 0 on success, or EINVAL if the supplied variable does n
 
 #####  Example
 
-- [thrd_specific.c](http://)
-- [pthread_key_create](http://)
-- [pthread_once](http://)
+- [thrd_specific.c](http://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/thrd_specific.c)
+- [pthread_key_create](http://linux.die.net/man/3/pthread_key_create)
+- [pthread_once](http://linux.die.net/man/3/pthread_once)
 
 
 
@@ -444,18 +444,15 @@ As we create threads, we need to think about terminating them as well. There are
 
 #####  Canceling A Thread
 
-When we want to terminate a thread, we can use the pthread_cancel function. This function gets a thread ID as a parameter, and sends a cancellation request to this thread. What this thread does with this request depends on its state. It might act on it immediately, it might act on it when it gets to a cancellation point (discussed below), or it might completely ignore it. We'll see later how to set the state of a thread and define how it acts on cancellation requests. Lets first see how to use the cancel function. We assume that 'thr_id' is a variable of type pthread_id containing the ID of a running thread: 
-
+When we want to terminate a thread, we can use the pthread_cancel function. This function gets a thread ID as a parameter, and sends a cancellation request to this thread. What this thread does with this request depends on its state. It might act on it immediately, it might act on it when it gets to a cancellation point (discussed below), or it might completely ignore it. We'll see later how to set the state of a thread and define how it acts on cancellation requests. Lets first see how to use the cancel function. We assume that 'thr_id' is a variable of type pthread_id containing the ID of a running thread:
 
 `pthread_cancel(thr_id);`
-
 
 The **pthread_cancel**() function returns 0, so we cannot know if it succeeded or not.
 
 #####  Setting Thread Cancellation State
 
-A thread's cancel state may be modified using several methods. The first is by using the pthread_setcancelstate() function. This function defines whether the thread will accept cancellation requests or not. The function takes two arguments. One that sets the new cancel state, and one into which the previous cancel state is stored by the function. Here is how it is used: 
-
+A thread's cancel state may be modified using several methods. The first is by using the pthread_setcancelstate() function. This function defines whether the thread will accept cancellation requests or not. The function takes two arguments. One that sets the new cancel state, and one into which the previous cancel state is stored by the function. Here is how it is used:
 ```
 int old_cancel_state;
 pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancel_state);
@@ -463,7 +460,7 @@ pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancel_state);
 
 This will disable canceling this thread. We can also enable canceling the thread like this: 
 
-````
+```
 int old_cancel_state;
 pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_cancel_state);
 ```
@@ -674,22 +671,23 @@ while (condition == FALSE)
 pthread_mutex_unlock(&mutex);
 ```
 
->Process B (incorrect):
-
-> ```
+> Process B (incorrect):
+> 
+```
 condition = TRUE;
 pthread_cond_signal(&cond);
 Then consider this possible interleaving of instructions, where condition starts out as FALSE:
 ```
 
 > `Process A   +++++++++++++++++++++++++++++++++   Process B`
-> ```
+> 
+```
 pthread_mutex_lock(&mutex);
 while (condition == FALSE)
 													condition = TRUE;
         											pthread_cond_signal(&cond);
 pthread_cond_wait(&cond, &mutex);
-> ```
+```
 The condition is now **TRUE**, but Process A is stuck waiting on the condition variable - it missed the wakeup signal. If we alter Process B to lock the mutex:
 
 > Process B (correct):
