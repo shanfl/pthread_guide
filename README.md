@@ -1,6 +1,6 @@
 
 [TOC]
-
+from url [https://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/multi-thread.html](https://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/multi-thread.html)
 #####   Before We Start...
 This tutorial is an attempt to help you become familiar with multi-threaded programming with the POSIX threads (pthreads) library, and attempts to show how its features can be used in "real-life" programs. It explains the different tools defined by the library, shows how to use them, and then gives an example of using them to solve programming problems. There is an implicit assumption that the user has some theoretical familiarity with paralell programming (or multi-processing) concepts. Users without such background might find the concepts harder to grasp. A seperate tutorial will be prepared to explain the theoreticl background and terms to those who are familiar only with normal "serial" programming.
 
